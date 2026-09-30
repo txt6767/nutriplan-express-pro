@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NutriPlan Express Pro - Menú Saludable & Entretenimiento</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #gameCanvas {
+      background: linear-gradient(to bottom, #e6f4ea, #c8e6c9);
+      border-radius: 1rem;
+    }
+    @keyframes spinWheel {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(1440deg); }
+    }
+    .spin-animation {
+      animation: spinWheel 3s cubic-bezier(0.15, 0.9, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100 min-h-screen text-gray-800 font-sans p-4 md:p-8">
+
+  <div class="max-w-5xl mx-auto">
+    <!-- Encabezado -->
+    <header class="text-center mb-8">
+      <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Edición Pro Ultra 5.0</span>
+      <h1 class="text-4xl md:text-5xl font-black text-emerald-800 mt-2">🥗 NutriPlan Express Pro</h1>
+      <p class="text-gray-600 mt-1">Generador dinámico de menú semanal, lista de compras, ruleta y minijuego arcade.</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Columna Izquierda: Configuración y Juegos -->
+      <div class="space-y-6">
+        
+        <!-- Formulario -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-emerald-100">
+          <h2 class="text-xl font-bold text-emerald-800 mb-4 flex items-center gap-2">⚙️ Configura tu Plan</h2>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Presupuesto semanal ($)</label>
+              <input type="number" id="presupuesto" value="60" class="w-full mt-1 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Nº de Personas</label>
+              <input type="number" id="personas" value="2" class="w-full mt-1 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Tipo de Dieta</label>
+              <select id="dieta" class="w-full mt-1 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="equilibrada">🥗 Equilibrada</option>
+                <option value="economica">💰 Económica / Estudiantil</option>
+                <option value="fitness">💪 Alta en Proteínas (Fitness)</option>
+                <option value="vegetariana">🌱 Vegetariana</option>
+              </select>
+            </div>
+
+            <button onclick="generarPlanVariado()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 rounded-xl shadow-lg transition transform">
+              🎲 Generar Nuevo Menú
+            </button>
+          </div>
+        </div>
+
+        <!-- Ruleta de la Suerte -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-amber-200 text-center">
+          <h2 class="text-xl font-bold text-amber-800 mb-1">🎰 Ruleta de Antojos</h2>
+          <p class="text-xs text-gray-500 mb-3">¿No sabes qué cenar hoy? ¡Obtén una idea rápida!</p>
+          
+          <div class="relative w-28 h-28 mx-auto my-3 flex items-center justify-center">
+            <div id="ruletaVisual" class="w-24 h-24 rounded-full border-4 border-dashed border-amber-500 bg-amber-100 flex items-center justify-center text-3xl shadow-inner">
+              ❓
+            </div>
+          </div>
+
+          <button onclick="girarRuleta()" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold px-5 py-2 rounded-lg shadow transition text-sm">
+            🎡 ¡Girar Ruleta!
+          </button>
+
+          <div id="resultadoRuleta" class="mt-3 p-2 rounded-lg bg-amber-50 text-amber-900 font-semibold text-xs min-h-[40px] flex items-center justify-center">
+            ¡Haz clic para sugerirte una receta!
+          </div>
+        </div>
+
+        <!-- Minijuego Arcade NutriCatcher -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-emerald-200 text-center">
+          <h2 class="text-xl font-bold text-emerald-800 mb-1">🎮 NutriCatcher Arcade</h2>
+          <p class="text-xs text-gray-500 mb-3">¡Atrapa lo sano y esquiva la chatarra! La velocidad y la cantidad aumentarán progresivamente.</p>
+          
+          <div class="relative flex flex-col items-center">
+            <canvas id="gameCanvas" width="280" height="220" class="shadow-inner border border-emerald-300"></canvas>
+            
+            <!-- Controles -->
+            <div class="flex justify-between w-full max-w-[280px] mt-2 gap-2">
+              <button onclick="moverCestaBoton(-1)" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold py-1.5 rounded-lg text-sm">⬅️ Izq</button>
+              <button onclick="iniciarJuego()" id="btnStart" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 rounded-lg text-sm shadow">▶️ Jugar</button>
+              <button onclick="moverCestaBoton(1)" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold py-1.5 rounded-lg text-sm">Der ➡️️</button>
+            </div>
+          </div>
+
+          <div id="statusJuego" class="mt-3 p-2 rounded-lg bg-emerald-50 text-emerald-900 font-semibold text-xs">
+            Usa las flechas ⬅️ ➡️ o los botones para jugar.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Columna Derecha: Menú y Compras -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Menú Semanal -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-emerald-100">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-emerald-800">📅 Menú Generado</h2>
+            <span id="badgeDieta" class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-semibold">Selecciona una opción</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-emerald-100/70 text-emerald-900 text-sm">
+                  <th class="p-3 rounded-l-lg">Día</th>
+                  <th class="p-3">Desayuno</th>
+                  <th class="p-3">Almuerzo</th>
+                  <th class="p-3 rounded-r-lg">Cena</th>
+                </tr>
+              </thead>
+              <tbody id="tablaMenu" class="divide-y divide-gray-100 text-sm">
+                <tr>
+                  <td colspan="4" class="p-6 text-center text-gray-400">Haz clic en "Generar Nuevo Menú" para armar tu plan.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Lista de Compras -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-emerald-100">
+          <h2 class="text-2xl font-bold text-emerald-800 mb-2">🛒 Lista de Compras Estimada</h2>
+          <p class="text-xs text-gray-500 mb-4">Marca las cosas que ya tienes en casa para no comprarlas de nuevo.</p>
+
+          <div id="listaCompras" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div class="col-span-3 text-center text-gray-400 py-4">Genera un menú para calcular la lista de ingredientes.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Banco de datos con variaciones de comidas
+    const bancoComidas = {
+      equilibrada: {
+        desayunos: ["Avena con frutas y almendras", "Tostadas integrales con palta y huevo", "Yogur griego con granola y miel", "Panqueques de plátano con miel", "Omelette de espinacas y queso"],
+        almuerzos: ["Pechuga a la plancha con quinoa y ensalada", "Pescado al horno con puré de papas", "Lentejas guisadas con arroz y plátano", "Arroz integral con salteado de verduras y pollo", "Estofado de carne con verduras"],
+        cenas: ["Sopa de verduras y pechuga picada", "Crema de calabaza con semillas", "Ensalada César ligera con pollo", "Sándwich integral de atún y verduras", "Tortilla de verduras con ensalada fresca"]
+      },
+      economica: {
+        desayunos: ["Avena en hojuelas con leche", "Pan con huevo revuelto", "Tostadas con mermelada y mantequilla", "Fruta de estación con avena"],
+        almuerzos: ["Arroz con huevo frito y plátano", "Guiso de fideos con verduras", "Sopa de lentejas con arroz", "Torrejitas de atún con ensalada", "Arroz con garbanzos"],
+        cenas: ["Crema de verduras casera", "Sándwich de queso y tomate", "Arroz chaufa vegetal", "Sopa de fideos rápida"]
+      },
+      fitness: {
+        desayunos: ["Batido proteico de plátano y avena", "4 claras de huevo con pavo y palta", "Yogur alto en proteína con nueces", "Tostadas con mantequilla de maní"],
+        almuerzos: ["Pechuga de pavo con camote al horno", "Filete de salmón/atún con brócoli al vapor", "Arroz integral con res magra", "Bowl de quinoa, pollo y palta"],
+        cenas: ["Ensalada de atún con huevo duro", "Pollo a la plancha con espárragos", "Omelette de 3 claras y champiñones", "Wrap integral de pavo y lechuga"]
+      },
+      vegetariana: {
+        desayunos: ["Bowl de frutas con chía y linaza", "Tostadas con hummus y tomate", "Smoothie verde de espinaca y piña", "Porridge de avena y leche de almendras"],
+        almuerzos: ["Hamburguesa de lentejas con ensalada", "Curry de garbanzos con arroz basmati", "Lasaña de berenjena y queso", "Salteado de tofu con verduras"],
+        cenas: ["Sopa minestrone vegetal", "Ensalada de quinoa con palta y tomate", "Tacos de frijoles con palta", "Tostadas con crema de palta y semillas"]
+      }
+    };
+
+    const ingredientesBase = {
+      '🥦 Verduras y Frutas': ['Plátanos', 'Manzanas', 'Espinacas', 'Tomates', 'Papas/Camotes', 'Palta', 'Brócoli'],
+      '🥩 Proteínas': ['Pechuga de Pollo', 'Huevos', 'Atún en lata', 'Lentejas / Garbanzos', 'Queso fresco'],
+      '🌾 Abarrotes y Granos': ['Avena', 'Arroz integral', 'Quinoa / Pasta', 'Pan integral', 'Aceite de Oliva']
+    };
+
+    const opcionesRuleta = [
+      "🍕 Pizza casera con masa integral",
+      "🌮 Tacos saludables de pollo",
+      "🍔 Hamburguesa artesanal de lentejas",
+      "🥑 Bowl de salmón y palta",
+      "🥞 Panqueques proteicos de avena",
+      "🥗 Ensalada Griega con queso feta"
+    ];
+
+    function obtenerAleatorio(arreglo) {
+      return arreglo[Math.floor(Math.random() * arreglo.length)];
+    }
+
+    function generarPlanVariado() {
+      const tipoDieta = document.getElementById('dieta').value;
+      const datosDieta = bancoComidas[tipoDieta];
+      const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+      const tabla = document.getElementById('tablaMenu');
+      tabla.innerHTML = '';
+
+      dias.forEach(dia => {
+        const desayuno = obtenerAleatorio(datosDieta.desayunos);
+        const almuerzo = obtenerAleatorio(datosDieta.almuerzos);
+        const cena = obtenerAleatorio(datosDieta.cenas);
+
+        tabla.innerHTML += `
+          <tr class="hover:bg-emerald-50/60 transition">
+            <td class="p-3 font-bold text-emerald-900">${dia}</td>
+            <td class="p-3">${desayuno}</td>
+            <td class="p-3">${almuerzo}</td>
+            <td class="p-3">${cena}</td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('badgeDieta').innerText = `Dieta: ${tipoDieta.toUpperCase()}`;
+
+      const listaContainer = document.getElementById('listaCompras');
+      listaContainer.innerHTML = '';
+
+      for (const [categoria, items] of Object.entries(ingredientesBase)) {
+        let itemsHTML = items.map(item => `
+          <label class="flex items-center space-x-2 my-1.5 cursor-pointer hover:text-emerald-700">
+            <input type="checkbox" class="accent-emerald-600 w-4 h-4 rounded">
+            <span>${item}</span>
+          </label>
+        `).join('');
+
+        listaContainer.innerHTML += `
+          <div class="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+            <h3 class="font-bold text-emerald-800 mb-2 text-xs uppercase tracking-wide">${categoria}</h3>
+            ${itemsHTML}
+          </div>
+        `;
+      }
+    }
+
+    // LÓGICA DE LA RULETA
+    function girarRuleta() {
+      const ruleta = document.getElementById('ruletaVisual');
+      const resultado = document.getElementById('resultadoRuleta');
+      
+      ruleta.classList.add('spin-animation');
+      resultado.innerText = "¡Girando ruleta...!";
+
+      setTimeout(() => {
+        ruleta.classList.remove('spin-animation');
+        const elegida = obtenerAleatorio(opcionesRuleta);
+        resultado.innerText = `🎉 ¡Te tocó: ${elegida}!`;
+        ruleta.innerText = "🍽️";
+      }, 3000);
+    }
+
+    // LÓGICA DEL MINIJUEGO ARCADE
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let cesta = { x: 110, y: 180, ancho: 60, alto: 25 };
+    let items = [];
+    let puntuacion = 0;
+    let vidas = 3;
+    let juegoActivo = false;
+    let loopJuego;
+    let velocidadBase = 1.0;
+    let velocidadCesta = 18;
+
+    const comidaSana = ['🥗', '🥑', '🍎', '🥦', '🍌'];
+    const comidaChatarra = ['🍔', '🍕', '🍩', '🍟'];
+
+    function iniciarJuego() {
+      if(juegoActivo) return;
+      
+      puntuacion = 0;
+      vidas = 3;
+      items = [];
+      cesta.x = 110;
+      velocidadBase = 1.0;
+      velocidadCesta = 18;
+      juegoActivo = true;
+
+      document.getElementById('btnStart').innerText = "🔄 Reiniciar";
+      document.getElementById('statusJuego').innerText = "¡Al inicio pocos alimentos y lentos! Irán aumentando.";
+
+      document.addEventListener('keydown', manejarTeclado);
+      
+      clearInterval(loopJuego);
+      loopJuego = setInterval(actualizarJuego, 1000 / 30);
+    }
+
+    function moverCestaBoton(dir) {
+      if (!juegoActivo) return;
+      cesta.x += dir * velocidadCesta;
+      if (cesta.x < 0) cesta.x = 0;
+      if (cesta.x + cesta.ancho > canvas.width) cesta.x = canvas.width - cesta.ancho;
+    }
+
+    function manejarTeclado(e) {
+      if (e.key === 'ArrowLeft') moverCestaBoton(-1);
+      if (e.key === 'ArrowRight') moverCestaBoton(1);
+    }
+
+    function generarItem() {
+      // Probabilidad de aparición gradual según puntuación
+      let probabilidadSpawn = 0.02 + (puntuacion / 200) * 0.06;
+      probabilidadSpawn = Math.min(probabilidadSpawn, 0.09); // Límite máximo para mantener la jugabilidad
+
+      if (Math.random() < probabilidadSpawn) {
+        const esSano = Math.random() > 0.35;
+        const icono = esSano ? obtenerAleatorio(comidaSana) : obtenerAleatorio(comidaChatarra);
+        items.push({
+          x: Math.random() * (canvas.width - 25),
+          y: -20,
+          velocidad: velocidadBase + (Math.random() * 0.5),
+          icono: icono,
+          esSano: esSano
+        });
+      }
+    }
+
+    function dibujarCesta() {
+      ctx.fillStyle = '#b45309';
+      ctx.beginPath();
+      ctx.roundRect(cesta.x, cesta.y, cesta.ancho, cesta.alto, [0, 0, 10, 10]);
+      ctx.fill();
+
+      ctx.fillStyle = '#d97706';
+      ctx.beginPath();
+      ctx.roundRect(cesta.x - 4, cesta.y, cesta.ancho + 8, 6, 3);
+      ctx.fill();
+
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cesta.x + 15, cesta.y + 6);
+      ctx.lineTo(cesta.x + 15, cesta.y + cesta.alto);
+      ctx.moveTo(cesta.x + 30, cesta.y + 6);
+      ctx.lineTo(cesta.x + 30, cesta.y + cesta.alto);
+      ctx.moveTo(cesta.x + 45, cesta.y + 6);
+      ctx.lineTo(cesta.x + 45, cesta.y + cesta.alto);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cesta.x + cesta.ancho/2, cesta.y, cesta.ancho/2.8, Math.PI, 0);
+      ctx.stroke();
+    }
+
+    function actualizarJuego() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Progreso de velocidad de caída y respuesta de la cesta
+      velocidadBase = 1.0 + (puntuacion / 40) * 0.4;
+      velocidadCesta = 18 + (puntuacion / 40) * 2;
+
+      dibujarCesta();
+      generarItem();
+
+      for (let i = items.length - 1; i >= 0; i--) {
+        let item = items[i];
+        item.y += item.velocidad;
+
+        ctx.font = '20px serif';
+        ctx.fillText(item.icono, item.x, item.y);
+
+        if (
+          item.y >= cesta.y - 10 && item.y <= cesta.y + cesta.alto &&
+          item.x + 15 >= cesta.x && item.x <= cesta.x + cesta.ancho
+        ) {
+          if (item.esSano) {
+            puntuacion += 10;
+          } else {
+            puntuacion = Math.max(0, puntuacion - 5);
+            vidas--;
+          }
+          items.splice(i, 1);
+          continue;
+        }
+
+        if (item.y > canvas.height) {
+          if (item.esSano) vidas--;
+          items.splice(i, 1);
+        }
+      }
+
+      ctx.fillStyle = '#065f46';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(`Puntos: ${puntuacion}`, 10, 18);
+      ctx.fillText(`Vidas: ${'❤️'.repeat(Math.max(0, vidas))}`, 190, 18);
+      ctx.fillText(`Velocidad: x${(velocidadBase).toFixed(1)}`, 10, 34);
+
+      if (vidas <= 0) {
+        juegoActivo = false;
+        clearInterval(loopJuego);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('¡Juego Terminado!', canvas.width / 2, canvas.height / 2 - 10);
+        ctx.font = '14px sans-serif';
+        ctx.fillText(`Puntaje Final: ${puntuacion} pts`, canvas.width / 2, canvas.height / 2 + 15);
+        
+        document.getElementById('statusJuego').innerText = `🏆 ¡Partida finalizada con ${puntuacion} puntos!`;
+        document.getElementById('btnStart').innerText = "▶️ Jugar de Nuevo";
+      }
+    }
+
+    generarPlanVariado();
+  </script>
+</body>
+</html>
